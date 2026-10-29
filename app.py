@@ -8,8 +8,7 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from database import AgentDatabase
-from workflow import TextToSQLAgent
+from sql_agent import AgentDatabase, TextToSQLAgent
 
 
 class QueryRequest(BaseModel):
@@ -24,6 +23,8 @@ class QueryResponse(BaseModel):
     columns: list[str]
     rows: list[dict[str, Any]]
     chart: dict[str, Any] | None
+    truncated: bool = False
+    elapsed_ms: float | None = None
 
 
 database = AgentDatabase(os.getenv("DATABASE_URL", "sqlite:///data/analytics.db"))
@@ -53,6 +54,8 @@ def query(request: QueryRequest) -> QueryResponse:
         columns=result.get("columns", []),
         rows=result.get("rows", []),
         chart=result.get("chart"),
+        truncated=bool(result.get("truncated")),
+        elapsed_ms=result.get("elapsed_ms"),
     )
 
 

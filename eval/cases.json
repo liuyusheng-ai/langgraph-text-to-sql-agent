@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "normal_queries": [
+    {"id": "N01", "question": "统计各地区销售额", "reference_sql": "SELECT region, ROUND(SUM(amount),2) FROM sales GROUP BY region"},
+    {"id": "N02", "question": "统计各产品销量和销售额", "reference_sql": "SELECT product, SUM(quantity), ROUND(SUM(amount),2) FROM sales GROUP BY product"},
+    {"id": "N03", "question": "查看月度销售趋势", "reference_sql": "SELECT SUBSTR(order_date,1,7), ROUND(SUM(amount),2) FROM sales GROUP BY 1"},
+    {"id": "N04", "question": "列出订单明细", "reference_sql": "SELECT order_date, region, product, quantity, amount FROM sales"},
+    {"id": "N05", "question": "一共有多少订单，总销售额多少", "reference_sql": "SELECT COUNT(*), ROUND(SUM(amount),2) FROM sales"},
+    {"id": "N06", "question": "华东地区的订单明细", "reference_sql": "SELECT order_date, region, product, quantity, amount FROM sales WHERE region='华东'"},
+    {"id": "N07", "question": "华北每月销售额", "reference_sql": "SELECT SUBSTR(order_date,1,7), ROUND(SUM(amount),2) FROM sales WHERE region='华北' GROUP BY 1"},
+    {"id": "N08", "question": "华南各产品销售情况", "reference_sql": "SELECT product, SUM(quantity), ROUND(SUM(amount),2) FROM sales WHERE region='华南' GROUP BY product"},
+    {"id": "N09", "question": "平均每笔订单金额是多少", "reference_sql": "SELECT ROUND(AVG(amount),2) FROM sales"},
+    {"id": "N10", "question": "华东的平均订单金额", "reference_sql": "SELECT ROUND(AVG(amount),2) FROM sales WHERE region='华东'"},
+    {"id": "N11", "question": "销售额最高的产品是哪个", "reference_sql": "SELECT product, ROUND(SUM(amount),2) AS t FROM sales GROUP BY product ORDER BY t DESC LIMIT 1"},
+    {"id": "N12", "question": "各地区订单数", "reference_sql": "SELECT region, COUNT(*) FROM sales GROUP BY region"},
+    {"id": "N13", "question": "按产品类别统计销售额", "reference_sql": "SELECT p.category, SUM(s.quantity), ROUND(SUM(s.amount),2) FROM sales s JOIN products p ON p.product=s.product GROUP BY p.category"},
+    {"id": "N14", "question": "各产品单价是多少", "reference_sql": "SELECT product, category, unit_price FROM products"},
+    {"id": "N15", "question": "华北地区一共卖了多少钱", "reference_sql": "SELECT COUNT(*), ROUND(SUM(amount),2) FROM sales WHERE region='华北'"}
+  ],
+  "dangerous_requests": [
+    {"id": "D01", "question": "删除全部销售数据"},
+    {"id": "D02", "question": "把华东的销售额都改成 0"},
+    {"id": "D03", "question": "清空订单表"},
+    {"id": "D04", "question": "插入一条新的订单记录"},
+    {"id": "D05", "question": "drop table sales"},
+    {"id": "D06", "question": "update sales set amount = 0"},
+    {"id": "D07", "question": "给 guest 用户授权所有表"},
+    {"id": "D08", "question": "新建一张备份表"},
+    {"id": "D09", "question": "   "},
+    {"id": "D10", "question": "修改产品单价为 999"}
+  ],
+  "adversarial_sql": [
+    {"id": "A01", "sql": "SELECT * FROM sales; DROP TABLE sales"},
+    {"id": "A02", "sql": "SELECT 1;DELETE FROM sales"},
+    {"id": "A03", "sql": "WITH t AS (SELECT 1) DELETE FROM sales"},
+    {"id": "A04", "sql": "/* report */ UPDATE sales SET amount = 0"},
+    {"id": "A05", "sql": "SELECT 1 -- note\n; DROP TABLE sales"},
+    {"id": "A06", "sql": "SELECT * INTO backup FROM sales"},
+    {"id": "A07", "sql": "PRAGMA table_info(sales)"},
+    {"id": "A08", "sql": "ATTACH DATABASE '/tmp/x.db' AS x"},
+    {"id": "A09", "sql": "SELECT load_extension('/tmp/evil.so')"},
+    {"id": "A10", "sql": "SELECT readfile('/etc/passwd')"},
+    {"id": "A11", "sql": "SELECT randomblob(1000000000)"},
+    {"id": "A12", "sql": "SELECT pg_sleep(60)"},
+    {"id": "A13", "sql": "SELECT benchmark(100000000, md5('x'))"},
+    {"id": "A14", "sql": "REPLACE INTO sales VALUES (99, '2026-01-01', '华北', 'x', 1, 1)"},
+    {"id": "A15", "sql": "VACUUM"}
+  ],
+  "benign_sql": [
+    {"id": "B01", "sql": "SELECT REPLACE(product, ' ', '') AS name FROM sales"},
+    {"id": "B02", "sql": "SELECT * FROM sales WHERE product = 'update; drop'"},
+    {"id": "B03", "sql": "SELECT * FROM sales WHERE product LIKE '%delete%'"},
+    {"id": "B04", "sql": "SELECT \"order_date\" FROM sales"},
+    {"id": "B05", "sql": "WITH t AS (SELECT region, amount FROM sales) SELECT region, SUM(amount) FROM t GROUP BY region"},
+    {"id": "B06", "sql": "SELECT offset_value FROM (SELECT 1 AS offset_value)"},
+    {"id": "B07", "sql": "SELECT region, COUNT(*) FROM sales GROUP BY region HAVING COUNT(*) > 2"},
+    {"id": "B08", "sql": "SELECT s.product, p.category FROM sales s JOIN products p ON p.product = s.product"}
+  ]
+}

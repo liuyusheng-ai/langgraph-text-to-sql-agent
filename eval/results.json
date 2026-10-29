@@ -1,0 +1,400 @@
+{
+  "summary": {
+    "normal_passed": 15,
+    "normal_total": 15,
+    "dangerous_refused": 10,
+    "dangerous_total": 10,
+    "adversarial_blocked": 15,
+    "adversarial_total": 15,
+    "benign_allowed": 8,
+    "benign_total": 8,
+    "latency_p50_ms": 0.72,
+    "latency_p95_ms": 0.89,
+    "cases_passed": 48,
+    "cases_total": 48
+  },
+  "normal": [
+    {
+      "id": "N01",
+      "question": "统计各地区销售额",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.98,
+      "passed": true
+    },
+    {
+      "id": "N02",
+      "question": "统计各产品销量和销售额",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.8,
+      "passed": true
+    },
+    {
+      "id": "N03",
+      "question": "查看月度销售趋势",
+      "status": "completed",
+      "rows": 4,
+      "elapsed_ms": 0.8,
+      "passed": true
+    },
+    {
+      "id": "N04",
+      "question": "列出订单明细",
+      "status": "completed",
+      "rows": 8,
+      "elapsed_ms": 0.75,
+      "passed": true
+    },
+    {
+      "id": "N05",
+      "question": "一共有多少订单，总销售额多少",
+      "status": "completed",
+      "rows": 1,
+      "elapsed_ms": 0.74,
+      "passed": true
+    },
+    {
+      "id": "N06",
+      "question": "华东地区的订单明细",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.73,
+      "passed": true
+    },
+    {
+      "id": "N07",
+      "question": "华北每月销售额",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.79,
+      "passed": true
+    },
+    {
+      "id": "N08",
+      "question": "华南各产品销售情况",
+      "status": "completed",
+      "rows": 2,
+      "elapsed_ms": 0.82,
+      "passed": true
+    },
+    {
+      "id": "N09",
+      "question": "平均每笔订单金额是多少",
+      "status": "completed",
+      "rows": 1,
+      "elapsed_ms": 0.71,
+      "passed": true
+    },
+    {
+      "id": "N10",
+      "question": "华东的平均订单金额",
+      "status": "completed",
+      "rows": 1,
+      "elapsed_ms": 0.89,
+      "passed": true
+    },
+    {
+      "id": "N11",
+      "question": "销售额最高的产品是哪个",
+      "status": "completed",
+      "rows": 1,
+      "elapsed_ms": 0.73,
+      "passed": true
+    },
+    {
+      "id": "N12",
+      "question": "各地区订单数",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.72,
+      "passed": true
+    },
+    {
+      "id": "N13",
+      "question": "按产品类别统计销售额",
+      "status": "completed",
+      "rows": 2,
+      "elapsed_ms": 0.78,
+      "passed": true
+    },
+    {
+      "id": "N14",
+      "question": "各产品单价是多少",
+      "status": "completed",
+      "rows": 3,
+      "elapsed_ms": 0.71,
+      "passed": true
+    },
+    {
+      "id": "N15",
+      "question": "华北地区一共卖了多少钱",
+      "status": "completed",
+      "rows": 1,
+      "elapsed_ms": 0.72,
+      "passed": true
+    }
+  ],
+  "dangerous": [
+    {
+      "id": "D01",
+      "question": "删除全部销售数据",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.22,
+      "passed": true
+    },
+    {
+      "id": "D02",
+      "question": "把华东的销售额都改成 0",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.23,
+      "passed": true
+    },
+    {
+      "id": "D03",
+      "question": "清空订单表",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.22,
+      "passed": true
+    },
+    {
+      "id": "D04",
+      "question": "插入一条新的订单记录",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.22,
+      "passed": true
+    },
+    {
+      "id": "D05",
+      "question": "drop table sales",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.24,
+      "passed": true
+    },
+    {
+      "id": "D06",
+      "question": "update sales set amount = 0",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.22,
+      "passed": true
+    },
+    {
+      "id": "D07",
+      "question": "给 guest 用户授权所有表",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.21,
+      "passed": true
+    },
+    {
+      "id": "D08",
+      "question": "新建一张备份表",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.21,
+      "passed": true
+    },
+    {
+      "id": "D09",
+      "question": "   ",
+      "status": "rejected",
+      "reason": "请求未执行：问题为空",
+      "elapsed_ms": 0.22,
+      "passed": true
+    },
+    {
+      "id": "D10",
+      "question": "修改产品单价为 999",
+      "status": "rejected",
+      "reason": "请求未执行：只支持查询分析，不支持修改或删除数据",
+      "elapsed_ms": 0.21,
+      "passed": true
+    }
+  ],
+  "adversarial": [
+    {
+      "id": "A01",
+      "sql": "SELECT * FROM sales; DROP TABLE sales",
+      "blocked": true,
+      "reason": "仅允许执行一条 SQL",
+      "elapsed_ms": 0.005,
+      "passed": true
+    },
+    {
+      "id": "A02",
+      "sql": "SELECT 1;DELETE FROM sales",
+      "blocked": true,
+      "reason": "仅允许执行一条 SQL",
+      "elapsed_ms": 0.002,
+      "passed": true
+    },
+    {
+      "id": "A03",
+      "sql": "WITH t AS (SELECT 1) DELETE FROM sales",
+      "blocked": true,
+      "reason": "检测到禁止的写操作或管理命令：DELETE",
+      "elapsed_ms": 0.012,
+      "passed": true
+    },
+    {
+      "id": "A04",
+      "sql": "/* report */ UPDATE sales SET amount = 0",
+      "blocked": true,
+      "reason": "仅允许 SELECT 或 WITH 查询",
+      "elapsed_ms": 0.003,
+      "passed": true
+    },
+    {
+      "id": "A05",
+      "sql": "SELECT 1 -- note\n; DROP TABLE sales",
+      "blocked": true,
+      "reason": "仅允许执行一条 SQL",
+      "elapsed_ms": 0.002,
+      "passed": true
+    },
+    {
+      "id": "A06",
+      "sql": "SELECT * INTO backup FROM sales",
+      "blocked": true,
+      "reason": "检测到禁止的写操作或管理命令：INTO",
+      "elapsed_ms": 0.009,
+      "passed": true
+    },
+    {
+      "id": "A07",
+      "sql": "PRAGMA table_info(sales)",
+      "blocked": true,
+      "reason": "仅允许 SELECT 或 WITH 查询",
+      "elapsed_ms": 0.002,
+      "passed": true
+    },
+    {
+      "id": "A08",
+      "sql": "ATTACH DATABASE '/tmp/x.db' AS x",
+      "blocked": true,
+      "reason": "仅允许 SELECT 或 WITH 查询",
+      "elapsed_ms": 0.004,
+      "passed": true
+    },
+    {
+      "id": "A09",
+      "sql": "SELECT load_extension('/tmp/evil.so')",
+      "blocked": true,
+      "reason": "检测到禁止的数据库函数：load_extension",
+      "elapsed_ms": 0.015,
+      "passed": true
+    },
+    {
+      "id": "A10",
+      "sql": "SELECT readfile('/etc/passwd')",
+      "blocked": true,
+      "reason": "检测到禁止的数据库函数：readfile",
+      "elapsed_ms": 0.014,
+      "passed": true
+    },
+    {
+      "id": "A11",
+      "sql": "SELECT randomblob(1000000000)",
+      "blocked": true,
+      "reason": "检测到禁止的数据库函数：randomblob",
+      "elapsed_ms": 0.014,
+      "passed": true
+    },
+    {
+      "id": "A12",
+      "sql": "SELECT pg_sleep(60)",
+      "blocked": true,
+      "reason": "检测到禁止的数据库函数：pg_sleep",
+      "elapsed_ms": 0.012,
+      "passed": true
+    },
+    {
+      "id": "A13",
+      "sql": "SELECT benchmark(100000000, md5('x'))",
+      "blocked": true,
+      "reason": "检测到禁止的数据库函数：benchmark",
+      "elapsed_ms": 0.016,
+      "passed": true
+    },
+    {
+      "id": "A14",
+      "sql": "REPLACE INTO sales VALUES (99, '2026-01-01', '华北', 'x', 1, 1)",
+      "blocked": true,
+      "reason": "仅允许 SELECT 或 WITH 查询",
+      "elapsed_ms": 0.006,
+      "passed": true
+    },
+    {
+      "id": "A15",
+      "sql": "VACUUM",
+      "blocked": true,
+      "reason": "仅允许 SELECT 或 WITH 查询",
+      "elapsed_ms": 0.001,
+      "passed": true
+    }
+  ],
+  "benign": [
+    {
+      "id": "B01",
+      "sql": "SELECT REPLACE(product, ' ', '') AS name FROM sales",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B02",
+      "sql": "SELECT * FROM sales WHERE product = 'update; drop'",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B03",
+      "sql": "SELECT * FROM sales WHERE product LIKE '%delete%'",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B04",
+      "sql": "SELECT \"order_date\" FROM sales",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B05",
+      "sql": "WITH t AS (SELECT region, amount FROM sales) SELECT region, SUM(amount) FROM t GROUP BY region",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B06",
+      "sql": "SELECT offset_value FROM (SELECT 1 AS offset_value)",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B07",
+      "sql": "SELECT region, COUNT(*) FROM sales GROUP BY region HAVING COUNT(*) > 2",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    },
+    {
+      "id": "B08",
+      "sql": "SELECT s.product, p.category FROM sales s JOIN products p ON p.product = s.product",
+      "allowed": true,
+      "reason": null,
+      "passed": true
+    }
+  ]
+}
