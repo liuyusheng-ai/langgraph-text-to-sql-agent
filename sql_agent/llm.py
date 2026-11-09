@@ -64,3 +64,82 @@ class DemoSQLGenerator:
             values = "，".join(f"{key}={value}" for key, value in rows[0].items())
             return f"根据当前数据，{values}。"
         return f"查询返回 {len(rows)} 行结果，可结合图表比较主要差异。"
+
+
+class OllamaSQLGenerator(DemoSQLGenerator):
+    """SQL generation with a local model served by Ollama (http://localhost:11434).
+
+    Uses only the standard library. Every call's token counts and latency are kept in
+    `self.calls` so evaluations can report cost alongside accuracy.
+    """
+
+    SYSTEM_PROMPT = (
+        "You are an expert data analyst who writes SQLite queries.\n"
+        "Rules:\n"
+        "- Answer with exactly one SQLite SELECT (or WITH ... SELECT) statement inside a ```sql code block.\n"
+        "- Use only tables and columns that appear in the schema; copy quoted names exactly, quotes included.\n"
+        "- Select only the columns the question asks for, in the order it asks for them.\n"
+        "- Never modify data."
+    )
+
+    def __init__(
+        self,
+        model: str = "qwen3.5:4b",
+        host: str = "http://localhost:11434",
+        temperature: float = 0.0,
+        num_ctx: int = 16384,
+        timeout_seconds: float = 180.0,
+    ) -> None:
+        self.model = model
+        self.host = host.rstrip("/")
+        self.temperature = temperature
+        self.num_ctx = num_ctx
+        self.timeout_seconds = timeout_seconds
+        self.calls: list[dict] = []
+
+    def generate(self, question: str, schema: str, error: str | None = None) -> str:
+        prompt = f"Database schema:\n{schema}\n\nQuestion: {question}"
+        if error:
+            prompt += (
+                f"\n\nYour previous query did not work.\n{error}\n"
+                "Fix the problem and answer with the corrected query."
+            )
+        content = self._chat(prompt)
+        return extract_sql(content)
+
+    def _chat(self, prompt: str) -> str:
+        import json
+        import time
+        import urllib.request
+
+        body = json.dumps({
+            "model": self.model,
+            "stream": False,
+            "think": False,
+            "options": {"temperature": self.temperature, "num_ctx": self.num_ctx},
+            "messages": [
+                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+        }).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self.host}/api/chat", data=body, headers={"Content-Type": "application/json"}
+        )
+        started = time.perf_counter()
+        with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            payload = json.loads(response.read())
+        self.calls.append({
+            "prompt_tokens": payload.get("prompt_eval_count", 0),
+            "completion_tokens": payload.get("eval_count", 0),
+            "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+        })
+        return payload["message"]["content"]
+
+
+def extract_sql(text: str) -> str:
+    """Take the SQL out of a fenced code block, or the first SELECT/WITH statement in plain text."""
+    fenced = re.findall(r"```(?:sql|sqlite)?\s*(.*?)```", text, flags=re.S | re.I)
+    if fenced:
+        return fenced[-1].strip()
+    match = re.search(r"\b(SELECT|WITH)\b.*", text, flags=re.S | re.I)
+    return (match.group(0) if match else text).strip()

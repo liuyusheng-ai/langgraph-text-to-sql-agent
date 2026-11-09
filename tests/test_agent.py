@@ -56,7 +56,28 @@ def test_generated_dangerous_sql_is_blocked_after_bounded_repair(database) -> No
     result = make_agent(database, generator=generator, max_repairs=2).run("统计销售额")
     assert result["status"] == "rejected"
     assert result["repair_count"] == 2
-    assert generator.errors == [None, "仅允许 SELECT 或 WITH 查询", "仅允许 SELECT 或 WITH 查询"]
+    assert generator.errors[0] is None
+    for error in generator.errors[1:]:
+        assert error.startswith("仅允许 SELECT 或 WITH 查询")
+        assert "上一次生成的 SQL：DROP TABLE sales" in error
+    assert [attempt["error"] for attempt in result["attempts"]] == ["仅允许 SELECT 或 WITH 查询"] * 3
+
+
+def test_execution_error_is_sent_back_for_repair(database) -> None:
+    generator = ScriptedGenerator(["SELECT no_such_column FROM sales", "SELECT COUNT(*) AS n FROM sales"])
+    result = make_agent(database, generator=generator).run("统计订单数")
+    assert result["status"] == "completed"
+    assert result["rows"] == [{"n": 8}]
+    assert "no such column" in generator.errors[1]
+    assert result["attempts"][0]["error"].startswith("查询执行失败")
+    assert result["attempts"][1]["error"] is None
+
+
+def test_execution_error_without_repair_budget_fails(database) -> None:
+    generator = ScriptedGenerator(["SELECT no_such_column FROM sales"])
+    result = make_agent(database, generator=generator, max_repairs=0).run("统计订单数")
+    assert result["status"] == "failed"
+    assert len(generator.errors) == 1
 
 
 def test_repair_path_recovers_with_valid_sql(database) -> None:
@@ -101,7 +122,9 @@ def test_runaway_query_is_interrupted_by_timeout(database) -> None:
 
 def test_schema_retrieval_selects_relevant_tables(database) -> None:
     assert database.schema_text("各产品单价是多少").startswith("products(")
-    assert "products(" not in database.schema_text("各地区订单数")
+    assert not any(line.startswith("products(") for line in database.schema_text("各地区订单数").splitlines())
+    # Foreign keys are shown so the model knows how to join.
+    assert "product TEXT REFERENCES products(product)" in database.schema_text("火星天气")
     assert set(line.split("(")[0] for line in database.schema_text("火星天气").splitlines()) == {"products", "sales"}
 
 
