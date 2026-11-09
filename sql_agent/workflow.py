@@ -31,6 +31,7 @@ class QueryState(TypedDict, total=False):
     validation_error: str | None
     rejection: str | None
     repair_count: int
+    attempts: list[dict[str, Any]]
     columns: list[str]
     rows: list[dict[str, Any]]
     truncated: bool
@@ -49,6 +50,7 @@ class TextToSQLAgent:
         max_repairs: int = 1,
         timeout_seconds: float = 3.0,
         max_question_chars: int = 500,
+        schema_retrieval: bool = False,
     ) -> None:
         self.database = database
         self.generator = generator or DemoSQLGenerator()
@@ -57,6 +59,8 @@ class TextToSQLAgent:
         self.max_repairs = max_repairs
         self.timeout_seconds = timeout_seconds
         self.max_question_chars = max_question_chars
+        # Off by default: on BIRD, keyword retrieval saved 14% tokens but missed join tables and cost 4.7 pp accuracy.
+        self.schema_retrieval = schema_retrieval
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -81,13 +85,19 @@ class TextToSQLAgent:
             self._route_after_validation,
             {"execute": "execute_sql", "repair": "generate_sql", "reject": "explain_result"},
         )
-        graph.add_edge("execute_sql", "explain_result")
+        graph.add_conditional_edges(
+            "execute_sql",
+            self._route_after_execution,
+            {"repair": "generate_sql", "explain": "explain_result"},
+        )
         graph.add_edge("explain_result", END)
         return graph.compile()
 
     def run(self, question: str) -> QueryState:
         started = time.perf_counter()
-        result = self.graph.invoke({"question": (question or "").strip(), "repair_count": 0, "status": "started"})
+        result = self.graph.invoke(
+            {"question": (question or "").strip(), "repair_count": 0, "attempts": [], "status": "started"}
+        )
         result["elapsed_ms"] = round((time.perf_counter() - started) * 1000, 2)
         self.database.record_history(
             result["question"] or "(空)",
@@ -110,18 +120,42 @@ class TextToSQLAgent:
         return {"intent": "analysis", "rejection": None, "status": "understood"}
 
     def _retrieve_schema(self, state: QueryState) -> QueryState:
-        return {"schema": self.database.schema_text(state["question"]), "status": "schema_loaded"}
+        question = state["question"] if self.schema_retrieval else None
+        return {"schema": self.database.schema_text(question), "status": "schema_loaded"}
 
     def _generate_sql(self, state: QueryState) -> QueryState:
-        repair_count = state.get("repair_count", 0) + (1 if state.get("validation_error") else 0)
-        sql = self.generator.generate(state["question"], state.get("schema", ""), state.get("validation_error"))
-        return {"sql": sql, "repair_count": repair_count, "validation_error": None, "status": "sql_generated"}
+        error = state.get("validation_error")
+        repair_count = state.get("repair_count", 0) + (1 if error else 0)
+        if error and state.get("sql"):
+            # The generator sees what it wrote last time and why it was rejected or failed.
+            error = f"{error}\n上一次生成的 SQL：{state['sql']}"
+        sql = self.generator.generate(state["question"], state.get("schema", ""), error)
+        attempts = list(state.get("attempts") or []) + [{"sql": sql, "error": None}]
+        return {
+            "sql": sql, "repair_count": repair_count, "attempts": attempts,
+            "validation_error": None, "status": "sql_generated",
+        }
+
+    def _record_attempt_error(self, state: QueryState, error: str) -> list[dict[str, Any]]:
+        attempts = list(state.get("attempts") or [])
+        if attempts:
+            attempts[-1] = {**attempts[-1], "error": error}
+        return attempts
 
     def _validate_sql(self, state: QueryState) -> QueryState:
         result = self.validator.validate(state.get("sql", ""))
         if result.is_safe:
             return {"safe_sql": result.sql, "validation_error": None, "status": "validated"}
-        return {"safe_sql": "", "validation_error": result.reason, "status": "blocked"}
+        return {
+            "safe_sql": "", "validation_error": result.reason, "status": "blocked",
+            "attempts": self._record_attempt_error(state, result.reason),
+        }
+
+    def _route_after_execution(self, state: QueryState) -> str:
+        # Database errors (unknown column, syntax) are worth one more try; timeouts are not.
+        if state.get("status") == "failed" and state.get("repair_count", 0) < self.max_repairs:
+            return "repair"
+        return "explain"
 
     def _route_after_validation(self, state: QueryState) -> str:
         if not state.get("validation_error"):
@@ -142,7 +176,11 @@ class TextToSQLAgent:
         except (QueryTimeout, FutureTimeout):
             return {"columns": [], "rows": [], "validation_error": "查询执行超时", "status": "timeout"}
         except Exception as exc:
-            return {"columns": [], "rows": [], "validation_error": f"查询执行失败：{exc}", "status": "failed"}
+            error = f"查询执行失败：{_first_line(exc)}"
+            return {
+                "columns": [], "rows": [], "validation_error": error, "status": "failed",
+                "attempts": self._record_attempt_error(state, error),
+            }
         finally:
             executor.shutdown(wait=False, cancel_futures=True)
 
@@ -156,3 +194,9 @@ class TextToSQLAgent:
         if state.get("truncated"):
             explanation += f"（结果超过 {self.max_rows} 行，仅返回前 {self.max_rows} 行）"
         return {"explanation": explanation, "chart": build_chart_spec(columns, rows), "status": "completed"}
+
+
+def _first_line(exc: Exception) -> str:
+    """SQLAlchemy errors append the full SQL and a docs link; keep only the database's message."""
+    original = getattr(exc, "orig", None) or exc
+    return str(original).splitlines()[0][:300]

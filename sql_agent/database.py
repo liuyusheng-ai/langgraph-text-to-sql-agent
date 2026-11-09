@@ -113,19 +113,28 @@ class AgentDatabase:
             )
 
     def tables(self) -> dict[str, list[str]]:
+        """Column definitions per table; names that need quoting are quoted and foreign keys are shown."""
         inspector = inspect(self.engine)
-        return {
-            name: [f"{column['name']} {column['type']}" for column in inspector.get_columns(name)]
-            for name in inspector.get_table_names()
-            if name != "query_history"
-        }
+        tables = {}
+        for name in inspector.get_table_names():
+            if name == "query_history":
+                continue
+            references = {}
+            for fk in inspector.get_foreign_keys(name):
+                for local, remote in zip(fk["constrained_columns"], fk["referred_columns"] or fk["constrained_columns"]):
+                    references[local] = f" REFERENCES {_quote(fk['referred_table'])}({_quote(remote)})"
+            tables[name] = [
+                f"{_quote(column['name'])} {column['type']}{references.get(column['name'], '')}"
+                for column in inspector.get_columns(name)
+            ]
+        return tables
 
     def schema_text(self, question: str | None = None) -> str:
         """Schema of the tables relevant to the question (all tables when nothing matches)."""
         tables = self.tables()
         selected = [name for name in tables if question and _table_matches(name, tables[name], question)]
         chosen = selected or list(tables)
-        return "\n".join(f"{name}({', '.join(tables[name])})" for name in chosen)
+        return "\n".join(f"{_quote(name)}({', '.join(tables[name])})" for name in chosen)
 
     def execute_readonly(
         self, sql: str, max_rows: int = 200, timeout_seconds: float = 3.0
@@ -189,9 +198,22 @@ def _sqlite_query_only(dbapi_connection, _record) -> None:
     dbapi_connection.execute("PRAGMA query_only = ON")
 
 
+def _quote(identifier: str) -> str:
+    """Quote identifiers with spaces or symbols so the model copies them into valid SQL."""
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", identifier):
+        return identifier
+    return '"' + identifier.replace('"', '""') + '"'
+
+
+def _column_name(definition: str) -> str:
+    if definition.startswith('"'):
+        return definition[1:].split('"', 1)[0]
+    return definition.split()[0]
+
+
 def _table_matches(table: str, columns: list[str], question: str) -> bool:
     lowered = question.lower()
-    names = [table] + [column.split()[0] for column in columns]
+    names = [table] + [_column_name(column) for column in columns]
     aliases = " ".join(SCHEMA_ALIASES.get(key, "") for key in [table] + [f"{table}.{n}" for n in names[1:]])
     words = names + aliases.split()
     return any(re.search(re.escape(word.lower()), lowered) for word in words if word)

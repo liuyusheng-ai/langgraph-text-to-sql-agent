@@ -17,7 +17,9 @@ FORBIDDEN_FUNCTIONS = {
     "load_extension", "readfile", "writefile", "edit", "fts3_tokenizer",
     "randomblob", "zeroblob",                                   # SQLite
     "pg_sleep", "pg_read_file", "pg_read_binary_file", "pg_ls_dir",
-    "lo_import", "lo_export", "dblink", "dblink_exec",           # PostgreSQL
+    "lo_import", "lo_export", "lo_unlink", "dblink", "dblink_exec",
+    "pg_terminate_backend", "pg_cancel_backend", "set_config",
+    "pg_reload_conf", "pg_rotate_logfile", "pg_promote",        # PostgreSQL
     "sleep", "benchmark", "load_file",                           # MySQL
 }
 
